@@ -70,4 +70,13 @@ GROUP BY p.name
 ORDER BY NumMoviesDirected DESC
 
 
+MATCH (p.Person)-[:Directed]->(m.Movies)
+RETURN p.name, COUNT(*)
+ORDER BY COUNT(*)
+GROUP BY P.name
+LIMIT 5
+
+
+
+
 
