@@ -1,0 +1,85 @@
+Listázzuk azon vendégek nevét, email-címét és felhasználói nevét, akik egynél többször foglaltak!
+Hagyjuk ki azokat a vendégeket, akik május hónapban születtek!
+
+SELECT NEV, EMAIL, USERNEV
+FROM Vendeg v
+JOIN Foglalas f ON v.USERNEV = f.UGYFEL_FK
+GROUP BY NEV, EMAIL, USERNEV, V.SZUL_DAT
+HAVING COUNT(FOGLALAS_PK) > 1 AND MONTH(V.SZUL_DAT) <> 5;
+
+
+Listázzuk azon szálláshelyek azonosítóját és nevét, amelyek a saját helyükön (HELY) a legtöbb csillaggal rendelkeznek!
+
+SELECT SZALLAS_ID, SZALLAS_NEV
+FROM Szallashely s
+WHERE CSILLAGOK_SZAMA =
+(SELECT MAX(CSILLAGOK_SZAMA)
+FROM Szallashely s2
+WHERE  s2.HELY = s.HELY
+)
+
+
+
+Készítsen lekérdezést, amely sorszámozza a vendégeket a foglalások száma alapján
+
+A sorszám mellett jelenjen meg a vendég azonosítója, neve és a foglalások száma is
+A legtöbbet foglaló vendég kapja az egyes sorszámot
+Holtverseny esetén a számozás annyit ugorjon, ahány egyforma érték van
+
+SELECT
+  ROW_NUMBER() OVER (ORDER BY FOGLALAS_SZAMA DESC) AS SORRENDSZAM,
+  f.UGYFEL_FK,
+  v.NEV,
+  f.FOGLALAS_SZAMA
+FROM Vendeg v
+JOIN (SELECT UGYFEL_FK, COUNT(*) AS FOGLALAS_SZAMA
+   FROM Foglalas
+   GROUP BY UGYFEL_FK) f ON v.USERNEV = f.UGYFEL_FK
+ORDER BY  FOGLALAS_SZAMA DESC;
+
+
+
+A Szoba tábla Ferohely oszlopára végezzük el a következő számításokat:
+
+Különböző értékek száma
+Minimum, maximum, átlag
+Null és Not null értékek százalékos aránya
+
+SELECT COUNT(DISTINCT Ferohely) AS 'KÜL. ÉRTÉK'
+FROM Szoba;
+
+SELECT MIN(Ferohely) AS MIN,
+       MAX(Ferohely) AS MAX,
+       AVG(Ferohely) AS ÁTLAG
+FROM Szoba;
+
+SELECT
+  (COUNT(*) - COUNT(Ferohely)) / COUNT(*) * 100 AS NULLA,
+  COUNT(Ferohely) / COUNT(*) * 100 AS NNULLA
+FROM Szoba;
+
+
+
+Oldja meg REDIS-ben a következő feladatokat:
+
+hozzon létre egy string kulcsot, amely egy könyvtár nevét tartalmazza
+hozzon létre egy hash kulcsot, amely egy könyv legalább 3 adatát tartalmazza
+hozzon létre egy set kulcsot, amely a könyvtárban lévő könyvek műfajait tartalmazza (legalább 3)
+hozzon létre egy list kulcsot, amely a kikölcsönzött könyvek címeit tartalmazza (legalább 3)
+hozzon létre egy sorted set kulcsot, amely az adott könyvek címeit és a könyv kölcsönzéseinek számát tartalmazza (legalább 3)
+
+SET library_name "Budapest Könyvtár"
+HSET book_details:1 title "Harry Potter" author "JK Rowling" genre "Fantasy"
+SADD könyvekufajai Fantasy Mystery Thriller
+RPUSH kölcsönzött "Harry Potter 1" "Harry Potter 2" "Harry Potter 3"
+ZADD kölcsönzött 5 "Harry Potter 1" ZADD kölcsönzött 4 "Harry Potter 2" ZADD kölcsönzött 10 "Harry Potter 3"
+
+
+
+A Neo4j Sandbox-ban vagy a Desktopban jelenítsük meg azon személyeket, akik egy filmben szerepeltek Tom Hanks-sel.
+Egy szereplő neve csak egyszer jelenjen meg
+Tom Hanks ne legyen benne a listában
+
+MATCH (p:Person {name: "Tom Hanks"})-[:ACTED_IN]->(movie:Movie)<-[:ACTED_IN]-(szinesz)
+WHERE p <> szinesz
+RETURN DISTINCT szinesz.name 
